@@ -23,9 +23,9 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore -c Release
-    - name: Set Nuget package version
+    - name: Publish nuget package
       run: |
-        npkgVersion=$(nbgv get-version -v NugetPackageVersion) \
         npkgFilePath=$(find ${GITHUB_WORKSPACE}/osocli/bin/Release -type f -name "*.nupkg") \
-        dotnet nuget push $npkgFilePath --api-key ${{ secrets.NUGET_KEY }} --source https://api.nuget.org/v3/index.json
+        echo "file path is: $npkgFilePath"
+        dotnet nuget push "$npkgFilePath" --api-key ${{ secrets.NUGET_KEY }} --source https://api.nuget.org/v3/index.json
       
