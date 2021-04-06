@@ -22,13 +22,10 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build --no-restore -c Release
     - name: Set Nuget package version
       run: |
         npkgVersion=$(nbgv get-version -v NugetPackageVersion) \
         npkgFilePath=$(find ${GITHUB_WORKSPACE}/osocli/bin/Release -type f -name "*.nupkg") \
-        newNpkgName="oso.cli.${npkgVersion}.nupkg" \
-        newNpkgPath="${GITHUB_WORKSPACE}/osocli/bin/Release/${newNpkgName}" \
-        cp $npkgFilePath $newNpkgPath \
-        dotnet nuget push $newNpkgPath --api-key ${{ secrets.NUGET_KEY }} --source https://api.nuget.org/v3/index.json
+        dotnet nuget push $npkgFilePath --api-key ${{ secrets.NUGET_KEY }} --source https://api.nuget.org/v3/index.json
       
