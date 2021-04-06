@@ -23,9 +23,12 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore -c Release
-    - name: Publish nuget package
+    - name: Find nuget package
+      id: find-nupkg
       run: |
-        npkgFilePath=$(find ${GITHUB_WORKSPACE}/osocli/bin/Release -type f -name "*.nupkg") \
-        echo "file path is: $npkgFilePath" \
-        dotnet nuget push "$npkgFilePath" --api-key ${{ secrets.NUGET_KEY }} --source https://api.nuget.org/v3/index.json
+        npkgFilePath=$(find ${{ github.workspace }}/osocli/bin/Release/ -type f -name "*.nupkg") \
+        echo "::set-output name=nugetPkgPath::$npkgFilePath" \
+    - name: Publish package
+      if: ${{ steps.find-nupkg.nugetPkgPath != '' }}
+      run: dotnet nuget push ${{ steps.find-nupkg.nugetPkgPath }} --api-key ${{ secrets.NUGET_KEY }} --source https://api.nuget.org/v3/index.json
       
