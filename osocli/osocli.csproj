@@ -12,6 +12,7 @@
     <RepositoryUrl>https://github.com/Oskar619/osocli</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <SignAssembly>False</SignAssembly>
+    <Version>1.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
