@@ -26,6 +26,6 @@ jobs:
     - name: Publish nuget package
       run: |
         npkgFilePath=$(find ${GITHUB_WORKSPACE}/osocli/bin/Release -type f -name "*.nupkg") \
-        echo "file path is: $npkgFilePath"
+        echo "file path is: $npkgFilePath" \
         dotnet nuget push "$npkgFilePath" --api-key ${{ secrets.NUGET_KEY }} --source https://api.nuget.org/v3/index.json
       
