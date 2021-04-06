@@ -26,9 +26,9 @@ jobs:
     - name: Find nuget package
       id: find-nupkg
       run: |
-        npkgFilePath=$(find ${{ github.workspace }}/osocli/bin/Release/ -type f -name '*.nupkg') \
-        echo "nuget package path: $npkgFilePath"
-        echo "::set-output name=nugetPkgPath::$npkgFilePath" \
+        echo "$(find ${{ github.workspace }}/osocli/bin/Release/ -type f -name '*.nupkg')" \
+        echo "nuget package path: $(find ${{ github.workspace }}/osocli/bin/Release/ -type f -name '*.nupkg')"
+        echo "::set-output name=nugetPkgPath::$(find ${{ github.workspace }}/osocli/bin/Release/ -type f -name '*.nupkg')" \
     - name: Publish package
       if: ${{ steps.find-nupkg.nugetPkgPath != '' }}
       run: dotnet nuget push ${{ steps.find-nupkg.nugetPkgPath }} --api-key ${{ secrets.NUGET_KEY }} --source https://api.nuget.org/v3/index.json
