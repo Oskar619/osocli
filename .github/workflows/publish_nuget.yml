@@ -26,7 +26,8 @@ jobs:
     - name: Find nuget package
       id: find-nupkg
       run: |
-        npkgFilePath=$(find ${{ github.workspace }}/bin/Release/ -type f -name "*.nupkg") \
+        npkgFilePath=$(find ${{ github.workspace }}/osocli/bin/Release/ -type f -name '*.nupkg') \
+        echo "nuget package path: $npkgFilePath"
         echo "::set-output name=nugetPkgPath::$npkgFilePath" \
     - name: Publish package
       if: ${{ steps.find-nupkg.nugetPkgPath != '' }}
