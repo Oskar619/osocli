@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31117.232
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "osocli", "osocli\osocli.csproj", "{4D02A7EC-0F0A-4FB2-9637-6DE3C924D66B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4D02A7EC-0F0A-4FB2-9637-6DE3C924D66B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D02A7EC-0F0A-4FB2-9637-6DE3C924D66B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D02A7EC-0F0A-4FB2-9637-6DE3C924D66B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D02A7EC-0F0A-4FB2-9637-6DE3C924D66B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {ED3018B4-3900-4B06-8CD5-8DF59C06B58B}
+	EndGlobalSection
+EndGlobal
