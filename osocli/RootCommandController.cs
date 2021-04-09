@@ -34,11 +34,12 @@ namespace osocli
 
         public void Init()
         {
+            var types = Assembly.GetCallingAssembly().GetTypes();
             // Get commands using reflection.
-            var commands = Assembly.GetExecutingAssembly()
+            var commands = Assembly.GetCallingAssembly()
                                    .GetTypes()
-                                   .Where(t => t.BaseType == typeof(Command) && t.GetConstructor(Type.EmptyTypes) != null)
-                                   .Select(t => Activator.CreateInstance(t) as Command)
+                                   .Where(t => t.IsClass && typeof(BaseCommand).IsAssignableFrom(t) && t.GetConstructor(Type.EmptyTypes) != null)
+                                   .Select(t => Activator.CreateInstance(t) as BaseCommand)
                                    .ToList();
 
             // Add the commands.

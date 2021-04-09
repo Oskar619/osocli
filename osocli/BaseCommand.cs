@@ -6,56 +6,31 @@ using System.Threading.Tasks;
 
 namespace osocli
 {
-    public abstract class BaseCommand<TOptions> : Command
-        where TOptions : class
+    public abstract class BaseCommand : Command
     {
         protected ServiceProvider ServiceProvider;
 
-        private readonly CancellationTokenSource cancellationTokenSource;
+        protected readonly CancellationTokenSource CancellationTokenSource;
 
         public BaseCommand(string name, string description)
             : base(name, description)
         {
-            cancellationTokenSource = new CancellationTokenSource();
-            Handler = CommandHandler.Create<TOptions>(TaskHandler);
+            CancellationTokenSource = new CancellationTokenSource();
         }
 
         /// <summary>
         /// Allows to override service configuration by specific command.
         /// </summary>
         /// <param name="collection">A service collection.</param>
-        internal virtual void ConfigureServices(ServiceCollection collection) { }
+        protected virtual void ConfigureServices(ServiceCollection collection) { }
 
-        private void InitializeServices()
+        protected void InitializeServices()
         {
             if (ServiceProvider == null)
             {
                 var collection = new ServiceCollection();
                 ConfigureServices(collection);
                 ServiceProvider = collection.BuildServiceProvider();
-            }
-        }
-
-        /// <summary>
-        /// The action handler for the command.
-        /// </summary>
-        /// <param name="scope">The service scope with all the dependencies.</param>
-        /// <returns>The awaitable task.</returns>
-        internal abstract Task<int> HandleAction(IServiceScope scope, TOptions commandOptions, ILogger logger, CancellationToken cancellationToken);
-
-        private async Task<int> TaskHandler(TOptions options)
-        {
-            InitializeServices();
-            try
-            {
-                using var scope = ServiceProvider.CreateScope();
-                var logger = scope.ServiceProvider.GetService<ILogger>();
-                var result = await HandleAction(scope, options, logger, cancellationTokenSource.Token);
-                return result;
-            }
-            finally
-            {
-                cancellationTokenSource.Cancel();
             }
         }
 
@@ -126,6 +101,41 @@ namespace osocli
             option.Argument.IsHidden = true;
             option.IsHidden = true;
             return option;
+        }
+    }
+
+    public abstract class BaseCommand<TOptions> : BaseCommand
+        where TOptions : class
+    {
+
+
+        public BaseCommand(string name, string description)
+            : base(name, description)
+        {
+            Handler = CommandHandler.Create<TOptions>(TaskHandler);
+        }
+
+        /// <summary>
+        /// The action handler for the command.
+        /// </summary>
+        /// <param name="scope">The service scope with all the dependencies.</param>
+        /// <returns>The awaitable task.</returns>
+        public abstract Task<int> HandleAction(IServiceScope scope, TOptions commandOptions, ILogger logger, CancellationToken cancellationToken);
+
+        private async Task<int> TaskHandler(TOptions options)
+        {
+            InitializeServices();
+            try
+            {
+                using var scope = ServiceProvider.CreateScope();
+                var logger = scope.ServiceProvider.GetService<ILogger>();
+                var result = await HandleAction(scope, options, logger, CancellationTokenSource.Token);
+                return result;
+            }
+            finally
+            {
+                CancellationTokenSource.Cancel();
+            }
         }
     }
 }
