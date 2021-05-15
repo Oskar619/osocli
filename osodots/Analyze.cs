@@ -3,6 +3,7 @@ using osocli;
 using osodots.Util;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,39 +23,99 @@ namespace osodots
 
         public override async Task<int> HandleAction(IServiceScope scope, AnalyzeCommandOptions commandOptions, ILogger logger, CancellationToken cancellationToken)
         {
-            var analyzer = scope.ServiceProvider.GetService<DotsAnalyzer>();
-            if(commandOptions.Workspace == null)
+            var cache = scope.ServiceProvider.GetService<DotsAnalyzerCache>();
+            cache.SetCacheId(commandOptions.GetAssetsFolder());
+            if(commandOptions.Workspace != null)
             {
-                Console.Write("Error: Workspace not specified.");
-                return -1;
+                var assetsFolder = commandOptions.Workspace;
+                if (assetsFolder.Name != "Assets")
+                {
+                    assetsFolder = assetsFolder.EnumerateDirectories("Assets", SearchOption.AllDirectories).FirstOrDefault();
+                }
+
+                if (assetsFolder == null)
+                {
+                    throw new InvalidOperationException($"Could not find the Assets Folder in the given workspace directory. If you wish to get data from files not attached to a Unity Project, send the files in the arguments by using the -f argument.");
+                }
+
+                Console.WriteLine($"analyzing workspace: {assetsFolder.FullName}");
+                var result = await DotsAnalyzer.AnalyzeDirectoryAsync(assetsFolder, cancellationToken, commandOptions.OutputFile?.FullName);
+                if (cache.IsEnabled)
+                {
+                    cache.SetData(result);
+                }
             }
-            if (commandOptions.Files != null)
+            else if (commandOptions.Files != null)
             {
-                await analyzer.AnalyzeFilesAsync(commandOptions.Workspace.FullName, commandOptions.Files, cancellationToken);
+                var analyzerResult = await DotsAnalyzer.AnalyzeFilesAsync(commandOptions.Files, cancellationToken);
+
+                if (cache.IsEnabled)
+                {
+                    cache.AppendData(analyzerResult);
+                }
             }
             else
             {
-                Console.WriteLine($"analyzing workspace: {commandOptions.Workspace.FullName}");
-                await analyzer.AnalyzeWorkspaceAsync(commandOptions.Workspace, cancellationToken, commandOptions.OutputFile?.FullName);
+                throw new Exception($"Please provide either a workspace (-w) or a file(s) (-f)");
             }
             return 0;
         }
 
         protected override void ConfigureServices(IServiceCollection collection)
         {
-            collection.AddSingleton<DotsAnalyzer>();
             collection.AddSingleton<DotsAnalyzerCache>();
         }
+
+        
     }
 
     public class AnalyzeCommandOptions : WorkspaceOptions
     {
         public FileInfo[] Files { get; set; }
         public FileInfo OutputFile { get; set; }
+        public override string GetAssetsFolder()
+        {
+            if(Workspace != null)
+            {
+                return base.GetAssetsFolder();
+            }
+            else
+            {
+                return GetAssetsFolderFromFile(Files);
+            }
+        }
+        private static string GetAssetsFolderFromFile(FileInfo[] files)
+        {
+            var fileDirectory = files.FirstOrDefault(f => f.DirectoryName.Contains("\\Assets\\"))?.Directory;
+            while (fileDirectory != null && fileDirectory.Parent.Name != "Assets")
+            {
+                fileDirectory = fileDirectory.Parent;
+            }
+            if (fileDirectory != null)
+            {
+                return fileDirectory.FullName;
+            }
+            return null;
+        }
     }
 
     public class WorkspaceOptions
     {
         public DirectoryInfo Workspace { get; set; }
+
+        public virtual string GetAssetsFolder()
+        {
+            var assetsFolder = Workspace;
+            if (assetsFolder.Name != "Assets")
+            {
+                assetsFolder = assetsFolder.EnumerateDirectories("Assets", SearchOption.AllDirectories).FirstOrDefault();
+            }
+
+            if (assetsFolder == null)
+            {
+                throw new InvalidOperationException($"Could not find the Assets Folder in the given workspace directory. If you wish to get data from files not attached to a Unity Project, send the files in the arguments by using the -f argument.");
+            }
+            return assetsFolder.FullName;
+        }
     }
 }

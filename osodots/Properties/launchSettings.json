@@ -2,7 +2,7 @@
   "profiles": {
     "osodots": {
       "commandName": "Project",
-      "commandLineArgs": "analyze -w C:\\prophunt\\PropHunt -o C:\\prophunt\\analyze_output.json"
+      "commandLineArgs": "analyze -w C:\\osobytes\\Scarred -o C:\\osobytes\\analyze_output.json -f C:\\osobytes\\Scarred\\Assets\\DOTS\\Core\\ArcheTypes\\CoreArcheTypes.cs"
     }
   }
 }

@@ -11,8 +11,10 @@ namespace osodots.Model
     {
         public string UpdateBefore { get; set; }
         public string UpdateAfter { get; set; }
-        public string OrderFirst { get; set; }
-        public string OrderLast { get; set; }
+        public bool OrderFirst { get; set; }
+        public bool OrderLast { get; set; }
+
+        public short OrderId { get; set; }
 
         public override void LoadFrom(ClassDeclarationSyntax classSyntax, AttributeListSyntax attributes = null)
         {

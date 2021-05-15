@@ -14,31 +14,26 @@ namespace osodots.Util
 {
     public class DotsAnalyzer
     {
-        private readonly DotsAnalyzerCache analyzerCache;
+        private static readonly string[] ExcludeFolders = new string[] { "Editor", "Library" };
 
-        private static string[] ExcludeFolders = new string[] { "Editor", "Library" };
-
-        public DotsAnalyzer(DotsAnalyzerCache cache)
-        {
-            this.analyzerCache = cache;
-        }
-
-        public async Task AnalyzeWorkspaceAsync(DirectoryInfo workspace, CancellationToken cancellationToken, string outFile = null)
+        public static async Task<Dictionary<string, DotsProperties>> AnalyzeDirectoryAsync(DirectoryInfo workspace, CancellationToken cancellationToken, string outFile = null)
         {
             if (workspace != null)
-            {
+            {   
                 var analyzerResult = await AnalyzeWorkspaceInternalAsync(workspace, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
-                this.analyzerCache.SetAnalyzedData(workspace.FullName, analyzerResult);
+                // this.analyzerCache.SetData(analyzerResult);
                 if (outFile != null)
                 {
                     var jsonData = JsonConvert.SerializeObject(analyzerResult);
                     await File.WriteAllTextAsync(outFile, jsonData);
                 }
+                return analyzerResult;
             }
+            return null;
         }
 
-        public async Task AnalyzeFilesAsync(string workspacePath, FileInfo[] files, CancellationToken cancellationToken)
+        public static async Task<Dictionary<string, DotsProperties>> AnalyzeFilesAsync(FileInfo[] files, CancellationToken cancellationToken)
         {
             var analyzerResult = new Dictionary<string, DotsProperties>();
 
@@ -53,28 +48,7 @@ namespace osodots.Util
                     }
                 }
             }
-
-            if (analyzerResult.Any())
-            {
-                this.analyzerCache.AppendAnalyzedData(workspacePath, analyzerResult);
-            }
-        }
-
-        public async Task AnalyzeWorkspaceIfNoCacheAvailableAsync(DirectoryInfo workspace, CancellationToken cancellationToken)
-        {
-            if (!analyzerCache.IsCached(workspace.FullName) && workspace != null)
-            {
-                return;
-            }
-
-            if (workspace != null)
-            {
-                var result = await AnalyzeWorkspaceInternalAsync(workspace, cancellationToken);
-                if (result != null)
-                {
-                    this.analyzerCache.SetAnalyzedData(workspace.FullName, result);
-                }
-            }
+            return analyzerResult;
         }
 
         private static DirectoryInfo[] GetValidDirectoriesInRoot(DirectoryInfo root)
@@ -85,7 +59,6 @@ namespace osodots.Util
         private static async Task<Dictionary<string, DotsProperties>> AnalyzeWorkspaceInternalAsync(DirectoryInfo workspace, CancellationToken cancellationToken)
         {
             var analyzerResult = new Dictionary<string, DotsProperties>();
-            // var vworkspace = workspace as VisualStudioWorkspace;
             var validDirectories = GetValidDirectoriesInRoot(workspace);
             foreach (var dir in validDirectories)
             {
@@ -116,13 +89,17 @@ namespace osodots.Util
             var csharpText = await File.ReadAllTextAsync(file.FullName, cancellationToken: cancellationToken);
             var tree = CSharpSyntaxTree.ParseText(csharpText, cancellationToken: cancellationToken);
             var root = tree.GetCompilationUnitRoot(cancellationToken);
-            var result = Analyze(root, file.FullName, cancellationToken);
+            var result = GetDotsPropertiesFromFile(root, file.FullName, cancellationToken);
             return result;
         }
 
-        private static DotsProperties Analyze(SyntaxNode root, string filePath, CancellationToken cancellationToken)
+        private static DotsProperties GetDotsPropertiesFromFile(SyntaxNode root, string filePath, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            var entityArchetypeExpressions = root.DescendantNodes()
+                .OfType<InvocationExpressionSyntax>()
+                .Where(d => d.Expression.ToString().EndsWith(DotsConstants.CreateEntityArchetype)).ToList();
+
             var classDeclarations = root.DescendantNodes().OfType<ClassDeclarationSyntax>();
             var systemGroups = new List<SystemGroupClassMetadata>();
             var components = new List<ComponentMetaData>();
@@ -139,7 +116,7 @@ namespace osodots.Util
                     case ClassAnalysisType.Authoring:
                         var authoringComponent = new AuthoringComponentMetadata
                         {
-                            Path = filePath,
+                            FileKey = filePath,
                             TypeName = typeName
                         };
                         authoringComponent.LoadFrom(classDeclaration, attributes);
@@ -150,7 +127,7 @@ namespace osodots.Util
                         var system = new SystemClassMetadata
                         {
                             Group = DotsConstants.SimulationSystemGroup,
-                            Path = filePath,
+                            FileKey = filePath,
                             TypeName = typeName
                         };
 
@@ -172,7 +149,7 @@ namespace osodots.Util
                     case ClassAnalysisType.SystemGroup:
                         var componentSystemGroup = new SystemGroupClassMetadata
                         {
-                            Path = filePath,
+                            FileKey = filePath,
                             TypeName = typeName,
                         };
 
@@ -183,7 +160,7 @@ namespace osodots.Util
                     case ClassAnalysisType.Component:
                         var component = new ComponentMetaData
                         {
-                            Path = filePath,
+                            FileKey = filePath,
                             TypeName = typeName
                         };
 
@@ -203,10 +180,11 @@ namespace osodots.Util
 
             return new DotsProperties
             {
-                AuthoringComponents = authoringComponents.ToArray(),
-                Components = components.ToArray(),
-                SystemGroups = systemGroups.ToArray(),
-                Systems = systems.ToArray()
+                FriendlyName = Path.GetFileNameWithoutExtension(filePath),
+                AuthoringComponents = authoringComponents.ToDictionary(i => i.Name),
+                Components = components.ToDictionary(i => i.Name),
+                SystemGroups = systemGroups.ToDictionary(i => i.Name),
+                Systems = systems.ToDictionary(i => i.Name)
             };
         }
 
@@ -259,5 +237,8 @@ namespace osodots.Util
         public const string NonSet = nameof(NonSet);
         public const string EntitiesForeach = "Entities.ForEach";
         public const string Convert = nameof(Convert);
+        public const string OrderLast = nameof(OrderLast);
+        public const string OrderFirst = nameof(OrderFirst);
+        public const string CreateEntityArchetype = nameof(CreateEntityArchetype);
     }
 }

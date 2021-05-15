@@ -7,8 +7,8 @@ namespace osodots.Model
     {
         public string TypeName { get; set; }
         public string Name { get; set; }
-        public string Path { get; set; }
         public TextSpan Span { get; set; }
+        public string FileKey { get; set; }
 
         public virtual void LoadFrom(ClassDeclarationSyntax classSyntax, AttributeListSyntax attributes = null)
         {

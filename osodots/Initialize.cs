@@ -19,14 +19,21 @@ namespace osodots
 
         public override async Task<int> HandleAction(IServiceScope scope, WorkspaceOptions commandOptions, ILogger logger, CancellationToken cancellationToken)
         {
-            var analyzer = scope.ServiceProvider.GetService<DotsAnalyzer>();
-            await analyzer.AnalyzeWorkspaceIfNoCacheAvailableAsync(commandOptions.Workspace, cancellationToken);
+            var cacheData = scope.ServiceProvider.GetService<DotsAnalyzerCache>();
+            var assetsFolder = commandOptions.GetAssetsFolder();
+            cacheData.SetCacheId(assetsFolder);
+
+            if(cacheData.Analysis == null)
+            {
+                var workspace = new DirectoryInfo(assetsFolder);
+                var result = await DotsAnalyzer.AnalyzeDirectoryAsync(workspace, cancellationToken);
+                cacheData.SetData(result);
+            }
             return 0;
         }
 
         protected override void ConfigureServices(IServiceCollection collection)
         {
-            collection.AddSingleton<DotsAnalyzer>();
             collection.AddSingleton<DotsAnalyzerCache>();
         }
     }

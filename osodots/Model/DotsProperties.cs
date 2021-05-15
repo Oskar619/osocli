@@ -1,15 +1,18 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace osodots.Model
 {
     public class DotsProperties
     {
-        public SystemClassMetadata[] Systems { get; set; }
-        public ComponentMetaData[] Components { get; set; }
-        public SystemGroupClassMetadata[] SystemGroups { get; set; }
-        public AuthoringComponentMetadata[] AuthoringComponents { get; set; }
+        public string FriendlyName { get; set; }
+        public Dictionary<string, SystemClassMetadata> Systems { get; set; }
+        public Dictionary<string, ComponentMetaData> Components { get; set; }
+        public Dictionary<string, SystemGroupClassMetadata> SystemGroups { get; set; }
+        public Dictionary<string, AuthoringComponentMetadata> AuthoringComponents { get; set; }
 
         [JsonIgnore]
-        public bool HasAnyDotsData => Systems.Length > 0 || Components.Length > 0 || SystemGroups.Length > 0 || AuthoringComponents.Length > 0;
+        public bool HasAnyDotsData => Systems.Any() || Components.Any() || SystemGroups.Any() || AuthoringComponents.Any();
     }
 }
