@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "osodots": {
+      "commandName": "Project",
+      "commandLineArgs": "analyze -w C:\\prophunt\\PropHunt -o C:\\prophunt\\analyze_output.json"
+    }
+  }
+}

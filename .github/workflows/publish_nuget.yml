@@ -22,10 +22,10 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --no-restore -c Release
+      run: cd osocli && dotnet build --no-restore -c Release
     - name: Find nuget package
       id: find-nupkg
-      run: echo "::set-output name=nugetPkgPath::$(find ${{ github.workspace }}/osocli/bin/Release/ -type f -name '*.nupkg')" \
+      run: echo "::set-output name=nugetPkgPath::$(find ${{ github.workspace }}/osocli/osocli/bin/Release/ -type f -name '*.nupkg')" \
     - name: Publish package
       if: ${{ steps.find-nupkg.outputs.nugetPkgPath != '' }}
       run: dotnet nuget push ${{ steps.find-nupkg.outputs.nugetPkgPath }} --api-key ${{ secrets.NUGET_KEY }} --source https://api.nuget.org/v3/index.json

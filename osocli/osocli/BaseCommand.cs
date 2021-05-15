@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿
+using Microsoft.Extensions.DependencyInjection;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Threading;
@@ -22,13 +23,16 @@ namespace osocli
         /// Allows to override service configuration by specific command.
         /// </summary>
         /// <param name="collection">A service collection.</param>
-        protected virtual void ConfigureServices(ServiceCollection collection) { }
+        protected virtual void ConfigureServices(IServiceCollection collection) { }
 
-        protected void InitializeServices()
+        protected void InitializeServices<TOptions>(TOptions options)
+            where TOptions : class
         {
             if (ServiceProvider == null)
             {
-                var collection = new ServiceCollection();
+                IServiceCollection collection = new ServiceCollection();
+                collection.AddSingleton(new OptionsReference(options));
+                collection.AddOptions<TOptions>();
                 ConfigureServices(collection);
                 ServiceProvider = collection.BuildServiceProvider();
             }
@@ -40,8 +44,9 @@ namespace osocli
         /// <typeparam name="T">The argument type for the option.</typeparam>
         /// <param name="name">The available name for this command option.</param>
         /// <param name="description">Description of the option.</param>
+        /// <param name="aliases">Define extra aliases for the command.</param>
         /// <returns>Returns an option created from the given values.</returns>
-        protected static Option CreateOption<T>(string name, string description)
+        protected static Option CreateOption<T>(string name, string description, string[] aliases = null)
         {
             var option = new Option(name, description)
             {
@@ -50,6 +55,14 @@ namespace osocli
                     ArgumentType = typeof(T),
                 }
             };
+
+            if(aliases != null)
+            {
+                foreach(var alias in aliases)
+                {
+                    option.AddAlias(alias);
+                }
+            }
             return option;
         }
 
@@ -59,10 +72,11 @@ namespace osocli
         /// <typeparam name="T">The argument type for the option.</typeparam>
         /// <param name="name">The available names for this command option.</param>
         /// <param name="description">Description of the option.</param>
+        /// <param name="aliases">Define extra aliases for the command.</param>
         /// <returns>Returns an option created from the given values.</returns>
-        protected static Option CreateHiddenOption<T>(string name, string description)
+        protected static Option CreateHiddenOption<T>(string name, string description, string[] aliases = null)
         {
-            var option = CreateOption<T>(name, description);
+            var option = CreateOption<T>(name, description, aliases);
             option.Argument.IsHidden = true;
             option.IsHidden = true;
             return option;
@@ -75,8 +89,9 @@ namespace osocli
         /// <param name="name">The available name for this command option.</param>
         /// <param name="description">Description of the option.</param>
         /// <param name="defaultValue">The default value.</param>
+        /// <param name="aliases">Define extra aliases for the command.</param>
         /// <returns>Returns an option created from the given values.</returns>
-        protected static Option CreateOptionWithDefault<T>(string name, string description, T defaultValue)
+        protected static Option CreateOptionWithDefault<T>(string name, string description, T defaultValue, string[] aliases = null)
         {
             var option = new Option(name, description);
             option.Argument = new Argument
@@ -84,6 +99,13 @@ namespace osocli
                 ArgumentType = typeof(T),
             };
             option.Argument.SetDefaultValue(defaultValue);
+            if (aliases != null)
+            {
+                foreach (var alias in aliases)
+                {
+                    option.AddAlias(alias);
+                }
+            }
             return option;
         }
 
@@ -94,10 +116,11 @@ namespace osocli
         /// <param name="name">The available name for this command option.</param>
         /// <param name="description">Description of the option.</param>
         /// <param name="defaultValue">The default value.</param>
+        /// <param name="aliases">Define extra aliases for the command.</param>
         /// <returns>Returns an option created from the given values.</returns>
-        protected static Option CreateHiddenOptionWithDefault<T>(string name, string description, T defaultValue)
+        protected static Option CreateHiddenOptionWithDefault<T>(string name, string description, T defaultValue, string[] aliases = null)
         {
-            var option = CreateOptionWithDefault(name, description, defaultValue);
+            var option = CreateOptionWithDefault(name, description, defaultValue, aliases);
             option.Argument.IsHidden = true;
             option.IsHidden = true;
             return option;
@@ -124,7 +147,7 @@ namespace osocli
 
         private async Task<int> TaskHandler(TOptions options)
         {
-            InitializeServices();
+            InitializeServices(options);
             try
             {
                 using var scope = ServiceProvider.CreateScope();
